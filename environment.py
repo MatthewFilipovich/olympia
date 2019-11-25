@@ -1,5 +1,5 @@
 import numpy as np
-from agent import Agent
+from objects import Agent, Ball
 from render import render_episodes
 from training_schemes import scheme
 
@@ -94,17 +94,3 @@ class Environment:
 	def render(self, episodes):
 		# create a visualization of the env
 		render_episodes(episodes)
-
-
-class Ball:
-	def __init__(self, env, initial_position):
-		self.env = env
-		self.mass = 1    # probably need mass parameter for collisions...
-		self.x = initial_position[0]
-		self.y = initial_position[1]
-		self.v_x = 0
-		self.v_y = 0
-
-	def step(self):
-		self.x += self.v_x * self.env.grids_per_metre
-		self.y += self.v_y * self.env.grids_per_metre
