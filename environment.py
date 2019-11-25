@@ -64,8 +64,7 @@ class Environment:
 		# move ball
 		self.ball.step()
 
-		# handle collisions (with walls + with ball)
-
+		# handle collisions between players, ball, and walls
 
 		# check for ball in net
 		if self._static_field[round(self.ball.x), round(self.ball.y)] == 254:
@@ -92,9 +91,9 @@ class Environment:
 				self.field[round(player.x), round(player.y)] = i+1
 		self.field[round(self.ball.x), round(self.ball.y)] = 0
 
-	def render(self):
+	def render(self, episodes):
 		# create a visualization of the env
-		pass
+		render_episodes(episodes)
 
 
 class Ball:
@@ -109,5 +108,3 @@ class Ball:
 	def step(self):
 		self.x += self.v_x * self.env.grids_per_metre
 		self.y += self.v_y * self.env.grids_per_metre
-
-
