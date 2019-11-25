@@ -1,19 +1,22 @@
 import numpy as np
 from agent import Agent
 from render import render_episodes
+from training_schemes import scheme
 
 
 class Environment:
-	def __init__(self, shape=(21,15), n_agents=1, n_teams=1):
+	def __init__(self, shape=(21, 15), n_agents=1, n_teams=1):
 		self.shape = shape
 		self.n_agents = n_agents
 		self.n_teams = n_teams
 		self._initial_ball_position = (int(shape[0]/2), int(shape[1]/2))
 		self.reset()
-		self._drawables = [self._static_field, self.teams, self.ball]
+		self._drawables = [self.teams, self.ball]
+		self._training_level = 'one player'
 
 	def __init_field__(self):
-		self.field = np.zeros(shape=self.shape, dtype=np.uint8)
+		self.grids_per_metre = int(self.shape[0]/100)
+		self.field = np.ones(shape=self.shape, dtype=np.uint8)
 		self.field[0, :] = 255    # left wall
 		self.field[:, 0] = 255    # bottom wall
 		self.field[self.shape[0]-1, :] = 255    # right wall
@@ -30,10 +33,10 @@ class Environment:
 			raise ValueError('Teams should be the same size.')
 		for team in self.teams:
 			for player in range(int(self.n_agents/self.n_teams)):
-				team.append(Agent(player))
+				team.append(Agent(self, player, (int(a*b) for a, b in zip(self.shape, scheme[self._training_level][team][player]))))
 
 	def __init_ball__(self):
-		self.ball = Ball(self._initial_ball_position)
+		self.ball = Ball(self, self._initial_ball_position)
 
 	def reset(self):
 		# reset environment to original state
@@ -45,19 +48,49 @@ class Environment:
 		# place players depending on number
 		self.__init_agents__()
 
-		return self.field
+		self._add_to_field()
+		return self.field.copy()
 
 	def step(self, *actions):
+		winning_team = None
+		done = False
 		# evolve environment based on actions
-		# return next state, rewards to each agent, if terminal state, and
 
-		# move player positions according to current positions, actions
-		# 	could move by acceleration values
-		# 	could move by single grid spaces
+		# move players
+		for i, team in enumerate(self.teams):
+			for j, player in enumerate(team):
+				player.step(actions[int(i*len(team)+j)])
 
-		# move ball according to its current velocity and field damping
+		# move ball
+		self.ball.step()
 
-		return observation, rewards, done, info
+		# handle collisions (with walls + with ball)
+
+
+		# check for ball in net
+		if self._static_field[round(self.ball.x), round(self.ball.y)] == 254:
+			done = True
+			if round(self.ball.x) == 0:
+				winning_team = 0
+			else:
+				winning_team = 1
+
+		if winning_team is None:
+			rewards = [-1 for _ in range(self.n_agents)]
+		elif winning_team == 0:
+			rewards = [100] * int(self.n_agents / 2) + [-100] * int(self.n_agents / 2)
+		else:
+			rewards = [-100] * int(self.n_agents / 2) + [100] * int(self.n_agents / 2)
+
+		self._add_to_field()
+		return self.field.copy(), rewards, done
+
+	def _add_to_field(self):
+		self.field = self._static_field.copy()
+		for i,team in enumerate(self.teams):
+			for player in team:
+				self.field[round(player.x), round(player.y)] = i+1
+		self.field[round(self.ball.x), round(self.ball.y)] = 0
 
 	def render(self):
 		# create a visualization of the env
@@ -65,11 +98,16 @@ class Environment:
 
 
 class Ball:
-	def __init__(self, initial_position):
-		self.mass = 0    # probably need mass parameter for collisions
+	def __init__(self, env, initial_position):
+		self.env = env
+		self.mass = 1    # probably need mass parameter for collisions...
 		self.x = initial_position[0]
 		self.y = initial_position[1]
 		self.v_x = 0
 		self.v_y = 0
+
+	def step(self):
+		self.x += self.v_x * self.env.grids_per_metre
+		self.y += self.v_y * self.env.grids_per_metre
 
 
