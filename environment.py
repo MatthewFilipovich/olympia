@@ -50,7 +50,7 @@ class Environment(gym.Env):
 
 	def reset(self):
 		# reset environment to original state
-		self.field = self._static_field
+		self.field = self._static_field.copy()
 
 		# put ball in center of field
 		self.ball = Ball(self, self._initial_ball_position)
