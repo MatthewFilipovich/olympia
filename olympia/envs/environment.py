@@ -49,6 +49,9 @@ class FieldEnv(gym.Env):
             for player in range(int(self.n_agents/self.n_teams)):
                 team.append(Agent(self, player, tuple(int(a*b) for a, b in zip(self.shape, scheme[self._training_level][i][player]))))
 
+    def output(self):
+        raise NotImplementedError('output() not implemented in child class!')
+
     def reset(self):
         # reset environment to original state
         self.field = self._static_field.copy()
@@ -60,7 +63,7 @@ class FieldEnv(gym.Env):
         self.__init_agents__()
 
         self._add_to_field()
-        return self.field.copy()
+        return self.output()
 
     def _player_at(self, pos):
         return bool((self.field[pos[0], pos[1]] == array([255, 0, 0])).all() or
@@ -156,7 +159,7 @@ class FieldEnv(gym.Env):
                     for _ in range(int(self.n_agents / self.n_teams)):
                         rewards.append(-100)
         self._add_to_field()
-        return self.field.copy(), rewards, done, None
+        return self.output(), rewards, done, None
 
     def _add_to_field(self):
         self.field = self._static_field.copy()
@@ -215,3 +218,22 @@ class FieldEnv(gym.Env):
         curses.echo()
         curses.nocbreak()
         curses.endwin()
+
+
+class OlympiaRGB(FieldEnv):
+    def __init__(self):
+        super(OlympiaRGB, self).__init__()
+
+    def output(self):
+        return self.field.copy()
+
+
+class OlympiaRAM(FieldEnv):
+    def __init__(self):
+        super(OlympiaRAM, self).__init__()
+
+    def output(self):
+        agents = []
+        for team in self.teams:
+            agents += team
+        return [self.ball.position.copy()] + [agent.position.copy() for agent in agents]
