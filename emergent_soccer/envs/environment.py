@@ -166,7 +166,7 @@ class FieldEnv(gym.Env):
         if (self.field[self.ball.position[0], self.ball.position[1]] == array([0, 0, 0])).all():
             self.field[self.ball.position[0], self.ball.position[1], 2] = 255  # ball is blue
 
-    def render(self, mode='human', field=None, scr=None):
+    def render(self, mode='human', field=None, scr=None, final=False):
         if field is None:
             field = self.field
             inplace = False
@@ -174,7 +174,7 @@ class FieldEnv(gym.Env):
             inplace = True
 
         outfile = sys.stdout
-        string = '\n'
+        string = '\n' if not final else '(Done)\n'
         for y in range(field.shape[1]-1, -1, -1):
             for x in range(field.shape[0]):
                 val = field[x, y]
@@ -210,8 +210,8 @@ class FieldEnv(gym.Env):
         stdscr = curses.initscr()
         curses.noecho()
         curses.cbreak()
-        for field in episode:
-            self.render(field=field, scr=stdscr)
+        for field, _, done, _ in episode:
+            self.render(field=field, scr=stdscr, final=done)
         curses.echo()
         curses.nocbreak()
         curses.endwin()
