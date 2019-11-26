@@ -5,6 +5,8 @@ from numpy import ones, array
 from grid_objects import Agent, Ball
 from training_schemes import scheme
 import gym
+import curses
+import time
 
 """
 In the field state:
@@ -143,13 +145,16 @@ class Environment(gym.Env):
                 winning_team = 1
         if winning_team is None:
             rewards = [-1 for _ in range(self.n_agents)]
-        elif winning_team == 0:
-            rewards = [100] * int(self.n_agents/self.n_teams) + [-100] * int(self.n_agents/self.n_teams)
         else:
-            rewards = [-100] * int(self.n_agents/self.n_teams) + [100] * int(self.n_agents/self.n_teams)
-
+            rewards = []
+            for team in self.teams:
+                if team == winning_team:
+                    for _ in range(int(self.n_agents / self.n_teams)):
+                        rewards.append(100)
+                else:
+                    for _ in range(int(self.n_agents / self.n_teams)):
+                        rewards.append(-100)
         self._add_to_field()
-
         return self.field.copy(), rewards, done, None
 
     def _add_to_field(self):
@@ -160,12 +165,18 @@ class Environment(gym.Env):
         if self.field[self.ball.position[0], self.ball.position[1]] == 1:
             self.field[self.ball.position[0], self.ball.position[1]] = 0
 
-    def render(self, mode='human'):
+    def render(self, mode='human', field=None, scr=None):
+        if field is None:
+            field = self.field
+            inplace = False
+        else:
+            inplace = True
+
         outfile = sys.stdout
         string = '\n'
-        for y in range(self.field.shape[1]-1, -1, -1):
-            for x in range(self.field.shape[0]):
-                val = self.field[x, y]
+        for y in range(field.shape[1]-1, -1, -1):
+            for x in range(field.shape[0]):
+                val = field[x, y]
                 if val == 1:
                     string += '   '
                 elif val == 0:
@@ -183,8 +194,23 @@ class Environment(gym.Env):
             string += '\n'
         string += '\n'
 
-        outfile.write(string)
+        if inplace:
+            scr.addstr(0, 0, string)
+            scr.refresh()
+            time.sleep(0.1)
+        else:
+            outfile.write(string)
 
         if mode != 'human':
             with closing(outfile):
                 return outfile.getvalue()
+
+    def render_episode(self, episode):
+        stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        for field in episode:
+            self.render(field=field, scr=stdscr)
+        curses.echo()
+        curses.nocbreak()
+        curses.endwin()
