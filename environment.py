@@ -3,7 +3,6 @@ from contextlib import closing
 import numpy as np
 from numpy import ones, array
 from grid_objects import Agent, Ball
-from render import render_episodes
 from training_schemes import scheme
 import gym
 
