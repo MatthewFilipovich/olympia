@@ -59,7 +59,7 @@ class Agent(GridObject):
             movement = list(self.actions.values())[ndx]
             new_pos = self.position + movement
             space = self.env.field[new_pos[0], new_pos[1]]
-            if not (space > 250 or space == 2 or space == 3):  # greater than 250 means wall or net, 2+3 are players
+            if not (space >= 250).any():  # greater than 250 means wall, net, players or ball
                 if self.has_ball:
                     if self.move_counter > 0:
                         self.move_counter -= 1
@@ -67,9 +67,15 @@ class Agent(GridObject):
                         self.env.ball.position = self.position.copy()
                 else:
                     self.position += movement
+            else:
+                if (self.env.field[new_pos[0], new_pos[1]] == array([0, 0, 255])).all():
+                    self.position += movement
+                    self.has_ball = True
+                    self.move_counter = 3
         else:  # throwing action
-            self.has_ball = False
-            self.move_counter = -1
-            self.env.ball.thrown(ndx-9)
+            if self.has_ball:
+                self.has_ball = False
+                self.move_counter = -1
+                self.env.ball.thrown(ndx-9)
 
 
