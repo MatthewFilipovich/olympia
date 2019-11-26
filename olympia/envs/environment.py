@@ -215,3 +215,13 @@ class FieldEnv(gym.Env):
         curses.echo()
         curses.nocbreak()
         curses.endwin()
+
+
+class OlympiaRGB(FieldEnv):
+    def __init__(self):
+        super(OlympiaRGB, self).__init__()
+
+
+class OlympiaRAM(FieldEnv):
+    def __init__(self):
+        super(OlympiaRAM, self).__init__()

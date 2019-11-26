@@ -1,6 +1,6 @@
 import unittest
 import gym
-import emergent_soccer
+import olympia
 
 
 class TestStringMethods(unittest.TestCase):

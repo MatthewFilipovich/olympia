@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name='emergent_soccer',
+setup(name='olympia',
       version='0.0.1',
       install_requires=['gym']
 )
