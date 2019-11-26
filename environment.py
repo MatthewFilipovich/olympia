@@ -144,9 +144,9 @@ class Environment(gym.Env):
         if winning_team is None:
             rewards = [-1 for _ in range(self.n_agents)]
         elif winning_team == 0:
-            rewards = [100] * int(self.n_agents / 2) + [-100] * int(self.n_agents / 2)
+            rewards = [100] * int(self.n_agents/self.n_teams) + [-100] * int(self.n_agents/self.n_teams)
         else:
-            rewards = [-100] * int(self.n_agents / 2) + [100] * int(self.n_agents / 2)
+            rewards = [-100] * int(self.n_agents/self.n_teams) + [100] * int(self.n_agents/self.n_teams)
 
         self._add_to_field()
 
