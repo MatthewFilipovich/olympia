@@ -19,7 +19,7 @@ In the field state:
 """
 
 
-class Environment(gym.Env):
+class FieldEnv(gym.Env):
     def __init__(self, shape=(21, 15), n_agents=1, n_teams=1):
         self.shape = shape
         self.n_agents = n_agents
