@@ -1,6 +1,8 @@
+import sys
+from contextlib import closing
 import numpy as np
 from numpy import ones, array
-from agent import Agent
+from grid_objects import Agent, Ball
 from render import render_episodes
 from training_schemes import scheme
 import gym
@@ -22,9 +24,9 @@ class Environment(gym.Env):
 		self.n_agents = n_agents
 		self.n_teams = n_teams
 		self._initial_ball_position = (int(shape[0]/2), int(shape[1]/2))
+		self._training_level = 'one player'
 		self.__init_static_field__()
 		self.reset()
-		self._training_level = 'one player'
 
 	def __init_static_field__(self):
 		self.field = ones(shape=self.shape, dtype=np.uint8)
@@ -42,9 +44,9 @@ class Environment(gym.Env):
 		self.teams = [[] for _ in range(self.n_teams)]
 		if self.n_agents % self.n_teams is not 0:
 			raise ValueError('Teams should be the same size.')
-		for team in self.teams:
+		for i, team in enumerate(self.teams):
 			for player in range(int(self.n_agents/self.n_teams)):
-				team.append(Agent(self, player, (int(a*b) for a, b in zip(self.shape, scheme[self._training_level][team][player]))))
+				team.append(Agent(self, player, tuple(int(a*b) for a, b in zip(self.shape, scheme[self._training_level][i][player]))))
 
 	def reset(self):
 		# reset environment to original state
@@ -87,10 +89,14 @@ class Environment(gym.Env):
 		elif wall_far_y:
 			move = array([move[0], 0])
 
+		if wall_beside_x or wall_far_x:
+			self.ball.movement = [array(-mv[0], mv[1]) for mv in self.ball.movement]
+		if wall_beside_y or wall_far_y:
+			self.ball.movement = [array(mv[0], -mv[1]) for mv in self.ball.movement]
+
 		new_pos = self.ball.position + move
 		inter_pos = self.ball.position + move / 2
 		return move, inter_pos, new_pos
-
 
 	def move_ball(self):
 		move = self.ball.movement.pop()
@@ -100,12 +106,6 @@ class Environment(gym.Env):
 		# check if ball has stopped
 		if len(self.ball.movement) == 0:
 			self.ball.moving = False
-		else:
-			if wall_beside_x or wall_far_x:
-				self.ball.movement = [array(-mv[0], mv[1]) for mv in self.ball.movement]
-
-			if wall_beside_y or wall_far_y:
-				self.ball.movement = [array(mv[0], -mv[1]) for mv in self.ball.movement]
 
 		# check if player is in the way
 		if self._player_at(inter_pos) or self._player_at(new_pos):
@@ -119,7 +119,7 @@ class Environment(gym.Env):
 			# make ball move
 			self.ball.position += move
 
-    def step(self, *actions):
+	def step(self, *actions):
 		winning_team = None
 		done = False
 
@@ -159,37 +159,13 @@ class Environment(gym.Env):
 		for i,team in enumerate(self.teams):
 			for player in team:
 				self.field[player.position[0], player.position[1]] = i+2  # teams look different on field
-		if not self.field[self.ball.position[0], self.ball.position[1]] == 1:
+		if self.field[self.ball.position[0], self.ball.position[1]] == 1:
 			self.field[self.ball.position[0], self.ball.position[1]] = 0
 
-	def render(self):
-		# create a visualization of the env
-		return self.field.copy()
+	def render(self, mode='human'):
+		outfile = sys.stdout
+		outfile.write("\n".join(''.join(str(line)) for line in self.field) + "\n")
 
-
-class GridObject:
-	def __init__(self, env, initial_position):
-		self.env = env
-		self.position = np.array(initial_position)
-
-
-class Ball(GridObject):
-	def __init__(self, env, initial_position):
-		super(Ball, self).__init__(env, initial_position)
-		self._turns_thrown = 3
-		self.moving = False
-		self.movements = {
-			'RIGHT': [array([2, 0])] * self._turns_thrown,
-			'UPRIGHT': [array([2, 2])] * self._turns_thrown,
-			'UP': [array([0, 2])] * self._turns_thrown,
-			'UPLEFT': [array([-2, 2])] * self._turns_thrown,
-			'LEFT': [array([-2, 0])] * self._turns_thrown,
-			'DOWNLEFT': [array([-2, -2])] * self._turns_thrown,
-			'DOWN': [array([0, -2])] * self._turns_thrown,
-			'DOWNRIGHT': [array([2, -2])] * self._turns_thrown
-		}
-		self.movement = []
-
-	def thrown(self, ndx):
-		self.moving = True
-		self.movement = list(self.movements.values())[ndx].copy()
+		if mode != 'human':
+			with closing(outfile):
+				return outfile.getvalue()

@@ -1,6 +1,32 @@
-
-from environment import GridObject
 from numpy import array
+
+
+class GridObject:
+    def __init__(self, env, initial_position):
+        self.env = env
+        self.position = array(initial_position)
+
+
+class Ball(GridObject):
+    def __init__(self, env, initial_position):
+        super(Ball, self).__init__(env, initial_position)
+        self._turns_thrown = 3
+        self.moving = False
+        self.movements = {
+            'RIGHT': [array([2, 0])] * self._turns_thrown,
+            'UPRIGHT': [array([2, 2])] * self._turns_thrown,
+            'UP': [array([0, 2])] * self._turns_thrown,
+            'UPLEFT': [array([-2, 2])] * self._turns_thrown,
+            'LEFT': [array([-2, 0])] * self._turns_thrown,
+            'DOWNLEFT': [array([-2, -2])] * self._turns_thrown,
+            'DOWN': [array([0, -2])] * self._turns_thrown,
+            'DOWNRIGHT': [array([2, -2])] * self._turns_thrown
+        }
+        self.movement = []
+
+    def thrown(self, ndx):
+        self.moving = True
+        self.movement = list(self.movements.values())[ndx].copy()
 
 
 class Agent(GridObject):
@@ -35,14 +61,14 @@ class Agent(GridObject):
             space = self.env.field[new_pos[0], new_pos[1]]
             if not (space > 250 or space == 2 or space == 3):  # greater than 250 means wall or net, 2+3 are players
                 if self.has_ball:
-                    if self.move_counter > 0
+                    if self.move_counter > 0:
                         self.move_counter -= 1
                         self.env.ball.position = self.position
                         self.position += movement
                 else:
                     self.position += movement
         else:  # throwing action
-            player.has_ball = False
+            self.has_ball = False
             self.move_counter = -1
             self.env.ball.thrown(ndx-9)
 
