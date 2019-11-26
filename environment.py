@@ -162,7 +162,28 @@ class Environment(gym.Env):
 
     def render(self, mode='human'):
         outfile = sys.stdout
-        outfile.write("\n".join(''.join(str(line)) for line in self.field) + "\n")
+        string = '\n'
+        for y in range(self.field.shape[1]-1, -1, -1):
+            for x in range(self.field.shape[0]):
+                val = self.field[x, y]
+                if val == 1:
+                    string += '   '
+                elif val == 0:
+                    string += ' o '
+                elif val == 2:
+                    string += ' 1 '
+                elif val == 3:
+                    string += ' 2 '
+                elif val == 255:
+                    string += ' x '
+                elif val == 254:
+                    string += ' | '
+                else:
+                    raise ValueError()
+            string += '\n'
+        string += '\n'
+
+        outfile.write(string)
 
         if mode != 'human':
             with closing(outfile):
