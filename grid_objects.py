@@ -63,8 +63,8 @@ class Agent(GridObject):
                 if self.has_ball:
                     if self.move_counter > 0:
                         self.move_counter -= 1
-                        self.env.ball.position = self.position
                         self.position += movement
+                        self.env.ball.position = self.position.copy()
                 else:
                     self.position += movement
         else:  # throwing action
