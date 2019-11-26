@@ -62,16 +62,50 @@ class Environment(gym.Env):
 	def _player_at(self, pos):
 		return bool(1 < self.field[pos[0], pos[1]] < 4)
 
-	def move_ball(self):
-		move = self.ball.movement.pop()
-		# check if ball has stopped
-		if len(self.ball.movement) == 0:
-			self.ball.moving = False
-
+	def check_walls(self, move):
 		new_pos = self.ball.position + move
 		inter_pos = self.ball.position + move / 2
 
-		# TODO: must check if ball hits the wall
+		wall_beside_x = self.field[inter_pos[0], self.ball.position[1]] == 255
+		wall_beside_y = self.field[self.ball.position[0], inter_pos[1]] == 255
+		wall_far_x = self.field[new_pos[0], self.ball.position[1]] == 255
+		wall_far_y = self.field[self.ball.position[0], new_pos[1]] == 255
+		if wall_beside_x and wall_beside_y:
+			move = array([-mv for mv in move])
+		elif wall_beside_x and wall_far_y:
+			move = array([-move[0], 0])
+		elif wall_far_x and wall_beside_y:
+			move = array([0, -move[1]])
+		elif wall_far_x and wall_far_y:
+			move = array([0, 0])
+		elif wall_beside_x:
+			move = array([-move[0], move[1]])
+		elif wall_beside_y:
+			move = array([move[0], -move[1]])
+		elif wall_far_x:
+			move = array([0, move[1]])
+		elif wall_far_y:
+			move = array([move[0], 0])
+
+		new_pos = self.ball.position + move
+		inter_pos = self.ball.position + move / 2
+		return move, inter_pos, new_pos
+
+
+	def move_ball(self):
+		move = self.ball.movement.pop()
+
+		move, inter_pos, new_pos = self.check_walls(move)
+
+		# check if ball has stopped
+		if len(self.ball.movement) == 0:
+			self.ball.moving = False
+		else:
+			if wall_beside_x or wall_far_x:
+				self.ball.movement = [array(-mv[0], mv[1]) for mv in self.ball.movement]
+
+			if wall_beside_y or wall_far_y:
+				self.ball.movement = [array(mv[0], -mv[1]) for mv in self.ball.movement]
 
 		# check if player is in the way
 		if self._player_at(inter_pos) or self._player_at(new_pos):
@@ -79,25 +113,26 @@ class Environment(gym.Env):
 				for j, player in enumerate(team):
 					if player.position == new_pos or player.position == inter_pos:
 						player.has_ball = True
+						player.move_counter = 3
 						self.ball.moving = False
+		else:
+			# make ball move
+			self.ball.position += move
 
-		# make ball move
-		self.ball.position += move
-
-	def step(self, *actions):
+    def step(self, *actions):
 		winning_team = None
 		done = False
 
 		# move players
-		# TODO: must implement check for players on same space
 		for i, team in enumerate(self.teams):
 			for j, player in enumerate(team):
-				action_ndx = int(i*len(team)+j)
-				player.act(actions[action_ndx])
-				if player.has_ball and action_ndx > 8:  # player threw the ball
-					player.has_ball = False
-					self.ball.thrown(action_ndx-9)
+				player_ndx = int(i * len(team) + j)
+				player.act(actions[player_ndx])
+				if self.field[player.position[0], player.position[1]] == 0:
+					player.has_ball = True
+					player.move_counter = 3
 
+		# move ball
 		if self.ball.moving:
 			self.move_ball()
 
@@ -108,7 +143,6 @@ class Environment(gym.Env):
 				winning_team = 0
 			else:
 				winning_team = 1
-
 		if winning_team is None:
 			rewards = [-1 for _ in range(self.n_agents)]
 		elif winning_team == 0:
@@ -158,4 +192,4 @@ class Ball(GridObject):
 
 	def thrown(self, ndx):
 		self.moving = True
-		self.movement = list(self.movements.values())[ndx]
+		self.movement = list(self.movements.values())[ndx].copy()
