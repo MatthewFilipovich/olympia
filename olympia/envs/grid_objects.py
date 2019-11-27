@@ -48,7 +48,7 @@ class Agent(GridObject):
         self.team = team
         self.number = number  # player's number on its team
         self.reset_position()
-        self.file_name = 'agent' + str(self.number) + 'team' + str(self.team) + '.h5'
+        self.file_name = 'agent' + str(self.number) + 'team' + str(self.team)
         self.actions = {'STAY': array([0, 0]),
                         'RIGHT': array([1, 0]),
                         'UPRIGHT': array([1, 1]),
@@ -98,9 +98,9 @@ class Agent(GridObject):
                       optimizer=Adam(lr=self.learning_rate))
         return model
     
-    def reset_position(self):
-        x = random.randrange(-2, 3)
-        y = random.randrange(-2, 3)
+    def reset_position(self, randomize=True):
+        x = random.randrange(-1, 2) if randomize else 0
+        y = random.randrange(-1, 2) if randomize else 0
         self.position = array([self._initial_position[0] + x, self._initial_position[1] + y])
         self.has_ball = False
         self.move_counter = -1
@@ -156,6 +156,6 @@ class Agent(GridObject):
     def load(self, name):
         self.model.load_weights(self.file_name)
 
-    def save(self, episode):
-        self.model.save_weights(self.file_name+'ep'+str(episode))
+    def save(self, episode, model, level):
+        self.model.save_weights(self.file_name+'ep'+str(episode)+model+level+'.h5')
 
