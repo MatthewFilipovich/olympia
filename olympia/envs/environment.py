@@ -83,10 +83,10 @@ class FieldEnv(gym.Env):
         if load_saved:
             for agent in agents:
                 agent.load(agent.file_name)
-        done = False
         batch_size = 32
         start_time = time.time()
         for e in range(episodes):
+            done = False
             state = self.reset()
             while not done:
                 if render:
@@ -102,13 +102,13 @@ class FieldEnv(gym.Env):
                         .format(e, episodes, time.time() - start_time))
                 state = next_state
         for agent in agents:
-            agent.save(agent.file_name)
+            agent.save()
 
     def run(self, episodes=3, render=True):
         agents = self.get_agents()        
-        done = False
         start_time = time.time()
         for e in range(episodes):
+            done = False
             state = self.reset()
             while not done:
                 if render:

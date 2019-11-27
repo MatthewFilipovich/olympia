@@ -48,7 +48,7 @@ class Agent(GridObject):
         self.team = team
         self.number = number  # player's number on its team
         self.reset_position()
-        self.file_name = 'agent' + str(self.number) + '.h5'
+        self.file_name = 'agent' + str(self.number) + 'team' + str(self.team) + '.h5'
         self.actions = {'STAY': array([0, 0]),
                         'RIGHT': array([1, 0]),
                         'UPRIGHT': array([1, 1]),
