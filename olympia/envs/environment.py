@@ -78,33 +78,46 @@ class FieldEnv(gym.Env):
         self._add_to_field()
         return self.output()
 
-    def train(episodes, batch_size, render=False, load_saved=False):
-        agents = env.get_agents()
+    def train(self, episodes, batch_size, render=False, load_saved=False):
+        agents = self.get_agents()
         if load_saved:
             for agent in agents:
-                agent.load(self.file_name)
+                agent.load(agent.file_name)
         done = False
         batch_size = 32
         start_time = time.time()
-        for e in range(EPISODES):
-            state = env.reset()
+        for e in range(episodes):
+            state = self.reset()
             while not done:
                 if render:
-                    env.render()
+                    self.render()
                 actions = [agent.choose_action(state) for agent in agents]
-                next_state, rewards, done, _ = env.step(*actions)
+                next_state, rewards, done, _ = self.step(*actions)
                 for agent, action, reward in zip(agents, actions, rewards):       
                     agent.remember(state, action, reward, next_state, done)
                     if len(agent.memory) > batch_size and not done:
                         agent.replay(batch_size)
                 if done:
                     print("Episode {}/{} complete. Training time: {}"
-                        .format(e, EPISODES, time.time() - start_time))
+                        .format(e, episodes, time.time() - start_time))
                 state = next_state
         for agent in agents:
-            agent.save(self.file_name)
+            agent.save(agent.file_name)
 
-    def env.run(render=True):
+    def run(self, episodes=3, render=True):
+        agents = self.get_agents()        
+        done = False
+        start_time = time.time()
+        for e in range(episodes):
+            state = self.reset()
+            while not done:
+                if render:
+                    self.render()
+                actions = [agent.choose_action(state) for agent in agents]
+                state, _, done, _ = self.step(*actions)
+                if done:
+                    print("Episode {}/{} complete. Running time: {}"
+                        .format(e, episodes, time.time() - start_time))
 
     def output(self):
         raise NotImplementedError('output() not implemented in child class!')
