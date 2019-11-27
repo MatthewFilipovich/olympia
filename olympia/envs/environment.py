@@ -4,6 +4,7 @@ import numpy as np
 from numpy import zeros, array
 from .grid_objects import Agent, Ball
 from .training_schemes import scheme
+import random
 import gym
 import curses
 import time
@@ -20,13 +21,17 @@ In the field state:
 
 
 class FieldEnv(gym.Env):
-    def __init__(self, shape=(21, 15), n_agents=1, n_teams=1):
+    def __init__(self, shape=(21, 15), training_level='one player'):
         self.shape = shape
+        self._training_level = training_level
+        self.n_teams = len(scheme[self._training_level])
+        n_agents = 0
+        for team in scheme[self._training_level]:
+            n_agents += len(team)
         self.n_agents = n_agents
-        self.n_teams = n_teams
-        self._initial_ball_position = (int(shape[0]/2), int(shape[1]/2))
-        self._training_level = 'one player'
+        self.n_agents_team = (self.n_agents // self.n_teams)
         self.__init_static_field__()
+        self._initial_ball_position = (int(shape[0]/2), int(shape[1]/2))
         self.reset()
 
     def __init_static_field__(self):
@@ -47,10 +52,8 @@ class FieldEnv(gym.Env):
             raise ValueError('Teams should be the same size.')
         for i, team in enumerate(self.teams):
             for player in range(int(self.n_agents/self.n_teams)):
-                team.append(Agent(self, player, tuple(int(a*b) for a, b in zip(self.shape, scheme[self._training_level][i][player]))))
-
-    def output(self):
-        raise NotImplementedError('output() not implemented in child class!')
+                team.append(Agent(self, i, player, tuple(int(a*b) for a, b in
+                                                         zip(self.shape, scheme[self._training_level][i][player]))))
 
     def reset(self):
         # reset environment to original state
@@ -64,6 +67,9 @@ class FieldEnv(gym.Env):
 
         self._add_to_field()
         return self.output()
+
+    def output(self):
+        raise NotImplementedError('output() not implemented in child class!')
 
     def _player_at(self, pos):
         return bool((self.field[pos[0], pos[1]] == array([255, 0, 0])).all() or
@@ -165,9 +171,27 @@ class FieldEnv(gym.Env):
         self.field = self._static_field.copy()
         for i,team in enumerate(self.teams):
             for player in team:
+                if (self.field[player.position[0], player.position[1], :] == 255).any():  # player occupying same pos.
+                    other_player = None
+                    for j,position in enumerate(self.player_positions()):
+                        if (position == player.position).all():
+                            other_player = self.teams[j // self.n_agents_team][j % self.n_agents_team]
+                    moved_player = random.choice((player, other_player))
+                    moved_player.position = moved_player.prev_position.copy()
+                    self.field[moved_player.position[0], moved_player.position[1], moved_player.team] = 255
+                    self.field[player.position[0], player.position[1], moved_player.team] = 0
+                    if moved_player.has_ball:
+                        moved_player.has_ball = False
+                        moved_player.move_counter = -1
                 self.field[player.position[0], player.position[1], i] = 255  # teams are red and green
         if (self.field[self.ball.position[0], self.ball.position[1]] == array([0, 0, 0])).all():
             self.field[self.ball.position[0], self.ball.position[1], 2] = 255  # ball is blue
+
+    def player_positions(self):
+        agents = []
+        for team in self.teams:
+            agents += team
+        return [agent.position.copy() for agent in agents]
 
     def render(self, mode='human', field=None, scr=None, final=False):
         if field is None:
@@ -233,7 +257,5 @@ class OlympiaRAM(FieldEnv):
         super(OlympiaRAM, self).__init__()
 
     def output(self):
-        agents = []
-        for team in self.teams:
-            agents += team
-        return [self.ball.position.copy()] + [agent.position.copy() for agent in agents]
+        return [self.ball.position.copy()] + self.player_positions()
+

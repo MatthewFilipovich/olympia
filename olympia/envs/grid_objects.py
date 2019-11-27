@@ -30,11 +30,13 @@ class Ball(GridObject):
 
 
 class Agent(GridObject):
-    def __init__(self, env, number, initial_position):
+    def __init__(self, env, team, number, initial_position):
         super().__init__(env, initial_position)
+        self.team = team
         self.number = number  # player's number on its team
         self.has_ball = False
         self.move_counter = -1
+        self.prev_position = None
         self.actions = {'STAY': array([0, 0]),
                         'RIGHT': array([1, 0]),
                         'UPRIGHT': array([1, 1]),
@@ -55,6 +57,7 @@ class Agent(GridObject):
                         }
 
     def act(self, ndx):
+        self.prev_position = self.position.copy()
         if ndx <= 8:  # movement action
             movement = list(self.actions.values())[ndx]
             new_pos = self.position + movement
