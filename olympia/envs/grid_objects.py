@@ -98,9 +98,9 @@ class Agent(GridObject):
                       optimizer=Adam(lr=self.learning_rate))
         return model
     
-    def reset_position(self):
-        x = random.randrange(-2, 3)
-        y = random.randrange(-2, 3)
+    def reset_position(self, randomize=True):
+        x = random.randrange(-2, 3) if randomize else 0
+        y = random.randrange(-2, 3) if randomize else 0
         self.position = array([self._initial_position[0] + x, self._initial_position[1] + y])
         self.has_ball = False
         self.move_counter = -1
