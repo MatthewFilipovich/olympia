@@ -4,7 +4,7 @@ import numpy as np
 from numpy import array
 from collections import deque
 from keras.models import Sequential
-from keras.layers import Dense, Conv2D, MaxPooling2D
+from keras.layers import Dense, Conv2D, MaxPooling2D, Flatten
 from keras.optimizers import Adam
 
 
@@ -88,6 +88,7 @@ class Agent(GridObject):
             model.add(Conv2D(24, 3, input_shape=self.state_size, activation='relu'))
             model.add(Conv2D(24, 3, activation='relu'))
             model.add(MaxPooling2D())
+            model.add(Flatten())
             model.add(Dense(self.action_size, activation='linear'))
         else:
             raise ValueError('Invalid agent type supplied!')

@@ -262,7 +262,7 @@ class OlympiaRGB(FieldEnv):
         super(OlympiaRGB, self).__init__(agent_type='RGB', **kwargs)
 
     def output(self):
-        return self.field.copy()
+        return np.reshape(self.field.copy(), (1, *self.field.shape))
 
 
 class OlympiaRAM(FieldEnv):
