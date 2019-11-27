@@ -101,8 +101,9 @@ class FieldEnv(gym.Env):
                     print("Episode {}/{} complete. Training time: {}"
                         .format(e, episodes, time.time() - start_time))
                 state = next_state
-        for agent in agents:
-            agent.save()
+            if e % 10 == 0:     
+                for agent in agents:
+                    agent.save(e)
 
     def run(self, episodes=3, render=True):
         agents = self.get_agents()        
