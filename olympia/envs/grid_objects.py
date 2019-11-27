@@ -5,7 +5,7 @@ import numpy as np
 from numpy import array
 from collections import deque
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense, Conv2D, MaxPooling2D
 from keras.optimizers import Adam
 
 
@@ -39,6 +39,7 @@ class Ball(GridObject):
     def thrown(self, ndx):
         self.moving = True
         self.movement = list(self.movements.values())[ndx].copy()
+
 
 class Agent(GridObject):
     def __init__(self, env, agent_type, team, number, initial_position):
@@ -85,8 +86,10 @@ class Agent(GridObject):
             model.add(Dense(24, activation='relu'))
             model.add(Dense(self.action_size, activation='linear'))
         elif self.agent_type == 'RGB':
-            raise NotImplementedError
-            model.add() # add convolutional layers
+            model.add(Conv2D(24, 3, input_shape=self.state_size, activation='relu'))
+            model.add(Conv2D(24, 3, activation='relu'))
+            model.add(MaxPooling2D())
+            model.add(Dense(self.action_size, activation='linear'))
         else:
             raise ValueError('Invalid agent type supplied!')
 
@@ -134,7 +137,6 @@ class Agent(GridObject):
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
-
     def replay(self, batch_size):
         minibatch = random.sample(self.memory, batch_size)
         for state, action, reward, next_state, done in minibatch:
@@ -154,4 +156,3 @@ class Agent(GridObject):
     def save(self, name):
         self.model.save_weights(name)
 
-    
