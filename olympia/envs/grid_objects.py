@@ -1,4 +1,12 @@
-from numpy import array
+import random
+import gym
+from olympia.envs import OlympiaRGB, OlympiaRAM
+import emergent_soccer
+import numpy as np
+from collections import deque
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.optimizers import Adam
 
 
 class GridObject:
@@ -27,6 +35,7 @@ class Ball(GridObject):
     def thrown(self, ndx):
         self.moving = True
         self.movement = list(self.movements.values())[ndx].copy()
+
 class AgentRAM(GridObject):
     def __init__(self, env, number, initial_position):
         super().__init__(env, initial_position)
@@ -125,7 +134,7 @@ class AgentRAM(GridObject):
 
     def save(self, name):
         self.model.save_weights(name)
-        
+
 """
 class AgentRBG(GridObject):
     def __init__(self, env, number, initial_position):
