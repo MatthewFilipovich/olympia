@@ -221,16 +221,17 @@ class FieldEnv(gym.Env):
 
 
 class OlympiaRGB(FieldEnv):
-    def __init__(self):
-        super(OlympiaRGB, self).__init__()
+    def __init__(self, **kwargs):
+        super(OlympiaRGB, self).__init__(**kwargs)
+        
 
     def output(self):
         return self.field.copy()
 
 
 class OlympiaRAM(FieldEnv):
-    def __init__(self):
-        super(OlympiaRAM, self).__init__()
+    def __init__(self, **kwargs), :
+        super(OlympiaRAM, self).__init__(**kwargs)
 
     def output(self):
         agents = []
