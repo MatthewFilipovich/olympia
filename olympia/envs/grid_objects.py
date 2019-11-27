@@ -99,7 +99,9 @@ class Agent(GridObject):
         return model
     
     def reset_position(self):
-        super().reset_position()
+        x = random.randrange(-2, 3)
+        y = random.randrange(-2, 3)
+        self.position = array([self._initial_position[0] + x, self._initial_position[1] + y])
         self.has_ball = False
         self.move_counter = -1
         self.prev_position = None

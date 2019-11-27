@@ -15,6 +15,12 @@ class TestStringMethods(unittest.TestCase):
             ep.append((env.field.copy(), done))
         env.render_episode(ep)
 
+    def test_randomized_pos(self):
+        env = gym.make('olympia-rgb-v0')
+        for _ in range(10):
+            env.reset()
+            env.render()
+
 
 if __name__ == '__main__':
     unittest.main()
