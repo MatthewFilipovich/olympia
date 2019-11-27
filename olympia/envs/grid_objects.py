@@ -81,7 +81,6 @@ class Agent(GridObject):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
         if self.agent_type == 'RAM':
-            print(self.state_size)
             model.add(Dense(24, input_shape=self.state_size, activation='relu'))
             model.add(Dense(24, activation='relu'))
             model.add(Dense(self.action_size, activation='linear'))
@@ -106,8 +105,8 @@ class Agent(GridObject):
     def choose_action(self, state):
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_size)
-        act_values = self.model.predict(state)
-        return np.argmax(act_values[0])  # returns action
+        action_q = self.model.predict(state)
+        return np.argmax(action_q[0])  
 
     def act(self, ndx):
         self.prev_position = self.position.copy()
@@ -135,7 +134,7 @@ class Agent(GridObject):
                 self.env.ball.thrown(ndx-9)
 
     def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
+        self.memory.append((state.copy(), action, reward, next_state.copy(), done))
 
     def replay(self, batch_size):
         minibatch = random.sample(self.memory, batch_size)

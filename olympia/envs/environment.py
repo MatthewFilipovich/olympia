@@ -35,8 +35,8 @@ class FieldEnv(gym.Env):
             self.state_size = (*self.shape, 3)
         else:
             self.state_size = (self.n_agents * 2 + 2,)
+        self.ball = Ball(self, (int(shape[0]/2), int(shape[1]/2)))
         self.__init_static_field__()
-        self._initial_ball_position = (int(shape[0]/2), int(shape[1]/2))
         self.__init_agents__()
         self.reset()
 
@@ -68,7 +68,7 @@ class FieldEnv(gym.Env):
         self.field = self._static_field.copy()
 
         # put ball in center of field
-        self.ball = Ball(self, self._initial_ball_position)
+        self.ball.reset_position()
 
         # place players depending on their number
         for team in self.teams:
@@ -270,5 +270,5 @@ class OlympiaRAM(FieldEnv):
         super(OlympiaRAM, self).__init__(agent_type='RAM', **kwargs)
 
     def output(self):
-        return [self.ball.position.copy()] + self.get_player_positions()
+        return array([[*self.ball.position.copy()] + [coord for pos in self.get_player_positions() for coord in pos]])
 
