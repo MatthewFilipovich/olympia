@@ -48,6 +48,7 @@ class Agent(GridObject):
         self.team = team
         self.number = number  # player's number on its team
         self.reset_position()
+        self.file_name = 'agent' + str(self.number) + 'team' + str(self.team) + '.h5'
         self.actions = {'STAY': array([0, 0]),
                         'RIGHT': array([1, 0]),
                         'UPRIGHT': array([1, 1]),
@@ -153,8 +154,8 @@ class Agent(GridObject):
             self.epsilon *= self.epsilon_decay
 
     def load(self, name):
-        self.model.load_weights(name)
+        self.model.load_weights(self.file_name)
 
-    def save(self, name):
-        self.model.save_weights(name)
+    def save(self):
+        self.model.save_weights(self.file_name)
 

@@ -85,6 +85,47 @@ class FieldEnv(gym.Env):
         self._add_to_field()
         return self.output()
 
+    def train(self, episodes, batch_size, render=False, load_saved=False):
+        agents = self.get_agents()
+        if load_saved:
+            for agent in agents:
+                agent.load(agent.file_name)
+        batch_size = 32
+        start_time = time.time()
+        for e in range(episodes):
+            done = False
+            state = self.reset()
+            while not done:
+                if render:
+                    self.render()
+                actions = [agent.choose_action(state) for agent in agents]
+                next_state, rewards, done, _ = self.step(*actions)
+                for agent, action, reward in zip(agents, actions, rewards):       
+                    agent.remember(state, action, reward, next_state, done)
+                    if len(agent.memory) > batch_size and not done:
+                        agent.replay(batch_size)
+                if done:
+                    print("Episode {}/{} complete. Training time: {}"
+                        .format(e, episodes, time.time() - start_time))
+                state = next_state
+        for agent in agents:
+            agent.save()
+
+    def run(self, episodes=3, render=True):
+        agents = self.get_agents()        
+        start_time = time.time()
+        for e in range(episodes):
+            done = False
+            state = self.reset()
+            while not done:
+                if render:
+                    self.render()
+                actions = [agent.choose_action(state) for agent in agents]
+                state, _, done, _ = self.step(*actions)
+                if done:
+                    print("Episode {}/{} complete. Running time: {}"
+                        .format(e, episodes, time.time() - start_time))
+
     def output(self):
         raise NotImplementedError('output() not implemented in child class!')
 
