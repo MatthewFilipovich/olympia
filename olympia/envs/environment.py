@@ -262,7 +262,7 @@ class OlympiaRGB(FieldEnv):
 class OlympiaRAM(FieldEnv):
     def __init__(self, **kwargs):
         super(OlympiaRAM, self).__init__(agent_type='RAM', **kwargs)
-        self.state_size = tuple(self.n_agents * 2 + 2)
+        self.state_size = (self.n_agents * 2 + 2,)
 
     def output(self):
         return [self.ball.position.copy()] + self.get_player_positions()
