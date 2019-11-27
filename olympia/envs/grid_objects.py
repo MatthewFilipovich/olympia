@@ -156,6 +156,6 @@ class Agent(GridObject):
     def load(self, name):
         self.model.load_weights(self.file_name)
 
-    def save(self, episode):
-        self.model.save_weights(self.file_name+'ep'+str(episode))
+    def save(self, episode, model, level):
+        self.model.save_weights(self.file_name+'ep'+str(episode)+model+level)
 
