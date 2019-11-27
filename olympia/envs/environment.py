@@ -58,10 +58,10 @@ class FieldEnv(gym.Env):
             raise ValueError('Teams should be the same size.')
         for i, team in enumerate(self.teams):
             for player in range(self.n_agents_team):
+                init_pos = tuple(int(a * b) for a, b in zip(self.shape, scheme[self._training_level][i][player]))
                 team.append(Agent(env=self, agent_type=self.agent_type, 
                                   team=i, number=player, 
-                                  initial_position=tuple(int(a*b) for a, b in
-                                  zip(self.shape, scheme[self._training_level][i][player]))))
+                                  initial_position=init_pos))
 
     def reset(self):
         # reset environment to original state
