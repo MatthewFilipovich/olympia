@@ -21,6 +21,13 @@ In the field state:
 
 
 class FieldEnv(gym.Env):
+    FIELD = array([0,0,0])
+    TEAM1 = array([255, 0, 0])
+    TEAM2 = array([0,255,0])
+    BALL = array([0,0,255])
+    WALL = array([255,255,255])
+    GOAL = array([250,250,250])
+
     def __init__(self, agent_type='RAM', shape=(21, 15), training_level='one player'):
         self.agent_type = agent_type
         self.shape = shape
@@ -85,17 +92,30 @@ class FieldEnv(gym.Env):
         return [player for team in self.teams for player in team ]
 
     def _player_at(self, pos):
-        return bool((self.field[pos[0], pos[1]] == array([255, 0, 0])).all() or
-                    (self.field[pos[0], pos[1]] == array([0, 255, 0])).all())
+        return bool(self._same_pixel(self.field[pos[0], pos[1]], self.TEAM1) or
+                    self._same_pixel(self.field[pos[0], pos[1]], self.TEAM2))
+
+    def _wall_beside(self, position):
+        x = self._same_pixel(self.field[position[0], self.ball.position[1]], self.WALL)
+        y = self._same_pixel(self.field[self.ball.position[0], position[1]], self.WALL)
+        return x, y
+
+    @staticmethod
+    def _same_pixel(pixel1, pixel2):
+        return bool((pixel1 == pixel2).all())
+
+    def _same_position(self, pos1, pos2):
+        return self._same_pixel(pos1, pos2)
 
     def check_walls(self, move):
         new_pos = self.ball.position + move
         inter_pos = self.ball.position + array(move // 2, dtype=move.dtype)
 
-        wall_beside_x = (self.field[inter_pos[0], self.ball.position[1]] == array([255, 255, 255])).all()
-        wall_beside_y = (self.field[self.ball.position[0], inter_pos[1]] == array([255, 255, 255])).all()
-        wall_far_x = (self.field[new_pos[0], self.ball.position[1]] == array([255, 255, 255])).all()
-        wall_far_y = (self.field[self.ball.position[0], new_pos[1]] == array([255, 255, 255])).all()
+        wall_beside_x, wall_beside_y = self._wall_beside(inter_pos)
+        new_pos[0] = inter_pos[0] if wall_beside_x else new_pos[0]
+        new_pos[1] = inter_pos[1] if wall_beside_y else new_pos[1]
+        wall_far_x, wall_far_y = self._wall_beside(new_pos)
+
         if wall_beside_x and wall_beside_y:
             move = array([-mv for mv in move])
         elif wall_beside_x and wall_far_y:
@@ -134,7 +154,7 @@ class FieldEnv(gym.Env):
         if self._player_at(inter_pos) or self._player_at(new_pos):
             for i, team in enumerate(self.teams):
                 for j, player in enumerate(team):
-                    if player.position == new_pos or player.position == inter_pos:
+                    if self._same_position(player.position, new_pos) or self._same_position(player.position, inter_pos):
                         player.has_ball = True
                         player.move_counter = 3
                         self.ball.moving = False
@@ -160,7 +180,7 @@ class FieldEnv(gym.Env):
             self.move_ball()
 
         # check for ball in net
-        if (self._static_field[self.ball.position[0], self.ball.position[1]] == array([250, 250, 250])).all():
+        if self._same_pixel(self._static_field[self.ball.position[0], self.ball.position[1]], self.GOAL):
             done = True
             if self.ball.position[0] == 0:
                 winning_team = 0
@@ -187,7 +207,7 @@ class FieldEnv(gym.Env):
                 if (self.field[player.position[0], player.position[1], :] == 255).any():  # player occupying same pos.
                     other_player = None
                     for j,position in enumerate(self.get_player_positions()):
-                        if (position == player.position).all():
+                        if self._same_position(position, player.position):
                             other_player = self.teams[j // self.n_agents_team][j % self.n_agents_team]
                     moved_player = random.choice((player, other_player))
                     moved_player.position = moved_player.prev_position.copy()
@@ -197,7 +217,7 @@ class FieldEnv(gym.Env):
                         moved_player.has_ball = False
                         moved_player.move_counter = -1
                 self.field[player.position[0], player.position[1], i] = 255  # teams are red and green
-        if (self.field[self.ball.position[0], self.ball.position[1]] == array([0, 0, 0])).all():
+        if self._same_pixel(self.field[self.ball.position[0], self.ball.position[1]], self.FIELD):
             self.field[self.ball.position[0], self.ball.position[1], 2] = 255  # ball is blue
 
     def get_player_positions(self):
@@ -218,17 +238,17 @@ class FieldEnv(gym.Env):
         for y in range(field.shape[1]-1, -1, -1):
             for x in range(field.shape[0]):
                 val = field[x, y]
-                if (val == array([0,0,0])).all():
+                if self._same_pixel(val, self.FIELD):
                     string += '   '
-                elif (val == array([255,0,0])).all():
+                elif self._same_pixel(val, self.TEAM1):
                     string += ' 1 '
-                elif (val == array([0,255,0])).all():
+                elif self._same_pixel(val, self.TEAM2):
                     string += ' 2 '
-                elif (val == array([0,0,255])).all():
+                elif self._same_pixel(val, self.BALL):
                     string += ' o '
-                elif (val == array([255,255,255])).all():
+                elif self._same_pixel(val, self.WALL):
                     string += ' x '
-                elif (val == array([250,250,250])).all():
+                elif self._same_pixel(val, self.GOAL):
                     string += ' | '
                 else:
                     raise ValueError()
