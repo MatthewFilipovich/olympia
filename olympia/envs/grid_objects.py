@@ -48,7 +48,7 @@ class Agent(GridObject):
         self.team = team
         self.number = number  # player's number on its team
         self.reset_position()
-        self.file_name = 'agent' + str(self.number) + 'team' + str(self.team) + '.h5'
+        self.file_name = 'agent' + str(self.number) + 'team' + str(self.team)
         self.actions = {'STAY': array([0, 0]),
                         'RIGHT': array([1, 0]),
                         'UPRIGHT': array([1, 1]),
@@ -157,5 +157,5 @@ class Agent(GridObject):
         self.model.load_weights(self.file_name)
 
     def save(self, episode, model, level):
-        self.model.save_weights(self.file_name+'ep'+str(episode)+model+level)
+        self.model.save_weights(self.file_name+'ep'+str(episode)+model+level+'.h5')
 
