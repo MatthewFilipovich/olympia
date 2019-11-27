@@ -115,7 +115,7 @@ class FieldEnv(gym.Env):
     def run(self, episodes=3, render=True):
         agents = self.get_agents()        
         start_time = time.time()
-        for e in range(episodes):
+        for e in range(episodes):bat
             done = False
             state = self.reset()
             while not done:

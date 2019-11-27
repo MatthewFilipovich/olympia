@@ -8,7 +8,7 @@ class TestStringMethods(unittest.TestCase):
         env = gym.make('olympia-ram-v0')
         print('hello')
         env.render()
-        moves = [5,5,5,5,5,5,5,13,5,5,5,5,5,5,1,1,1,13,0]
+        moves = [5,5,5,5,5,5,5,13,5,5,5,5,5,5,1,13,1,0]
         ep = []
         for move in moves:
             _, _, done, _ = env.step(*[move])
