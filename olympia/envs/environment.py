@@ -30,7 +30,7 @@ class FieldEnv(gym.Env):
         for team in scheme[self._training_level]:
             n_agents += len(team)
         self.n_agents = n_agents
-        self.n_agents_team = (self.n_agents // self.n_teams)
+        self.n_agents_team = self.n_agents // self.n_teams
         self.__init_static_field__()
         self._initial_ball_position = (int(shape[0]/2), int(shape[1]/2))
         self.__init_agents__()
@@ -53,9 +53,11 @@ class FieldEnv(gym.Env):
         if self.n_agents % self.n_teams is not 0:
             raise ValueError('Teams should be the same size.')
         for i, team in enumerate(self.teams):
-            for player in range(int(self.n_agents/self.n_teams)):
-                team.append(Agent(self, self.agent_type, i, player, tuple(int(a*b) for a, b in
-                                                                    zip(self.shape, scheme[self._training_level][i][player]))))
+            for player in range(self.n_agents_team):
+                team.append(Agent(env=self, agent_type=self.agent_type, 
+                                  team=i, number=player, 
+                                  initial_position=tuple(int(a*b) for a, b in
+                                  zip(self.shape, scheme[self._training_level][i][player]))))
 
     def reset(self):
         # reset environment to original state
@@ -65,8 +67,8 @@ class FieldEnv(gym.Env):
         self.ball = Ball(self, self._initial_ball_position)
 
         # place players depending on their number
-       for i, team in enumerate(self.teams):
-            for player in range(int(self.n_agents/self.n_teams)):
+        for team in self.teams:
+            for player in team:
                 player.reset_position()
 
         self._add_to_field()
@@ -177,7 +179,7 @@ class FieldEnv(gym.Env):
             for player in team:
                 if (self.field[player.position[0], player.position[1], :] == 255).any():  # player occupying same pos.
                     other_player = None
-                    for j,position in enumerate(self.player_positions()):
+                    for j,position in enumerate(self.get_player_positions()):
                         if (position == player.position).all():
                             other_player = self.teams[j // self.n_agents_team][j % self.n_agents_team]
                     moved_player = random.choice((player, other_player))
@@ -191,7 +193,7 @@ class FieldEnv(gym.Env):
         if (self.field[self.ball.position[0], self.ball.position[1]] == array([0, 0, 0])).all():
             self.field[self.ball.position[0], self.ball.position[1], 2] = 255  # ball is blue
 
-    def player_positions(self):
+    def get_player_positions(self):
         agents = []
         for team in self.teams:
             agents += team
@@ -251,7 +253,7 @@ class FieldEnv(gym.Env):
 class OlympiaRGB(FieldEnv):
     def __init__(self, **kwargs):
         super(OlympiaRGB, self).__init__(agent_type='RGB', **kwargs)
-        
+        self.state_size = (*self.shape, 3)
 
     def output(self):
         return self.field.copy()
@@ -260,7 +262,8 @@ class OlympiaRGB(FieldEnv):
 class OlympiaRAM(FieldEnv):
     def __init__(self, **kwargs):
         super(OlympiaRAM, self).__init__(agent_type='RAM', **kwargs)
+        self.state_size = tuple(self.n_agents * 2 + 2)
 
     def output(self):
-        return [self.ball.position.copy()] + self.player_positions()
+        return [self.ball.position.copy()] + self.get_player_positions()
 
