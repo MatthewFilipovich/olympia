@@ -21,7 +21,8 @@ In the field state:
 
 
 class FieldEnv(gym.Env):
-    def __init__(self, shape=(21, 15), training_level='one player'):
+    def __init__(self, agent_type, shape=(21, 15), training_level='one player'):
+        self.agent_type = agent_type
         self.shape = shape
         self._training_level = training_level
         self.n_teams = len(scheme[self._training_level])
@@ -32,6 +33,7 @@ class FieldEnv(gym.Env):
         self.n_agents_team = (self.n_agents // self.n_teams)
         self.__init_static_field__()
         self._initial_ball_position = (int(shape[0]/2), int(shape[1]/2))
+        self.__init_agents__()
         self.reset()
 
     def __init_static_field__(self):
@@ -52,8 +54,8 @@ class FieldEnv(gym.Env):
             raise ValueError('Teams should be the same size.')
         for i, team in enumerate(self.teams):
             for player in range(int(self.n_agents/self.n_teams)):
-                team.append(Agent(self, i, player, tuple(int(a*b) for a, b in
-                                                         zip(self.shape, scheme[self._training_level][i][player]))))
+                team.append(Agent(self, self.agent_type, i, player, tuple(int(a*b) for a, b in
+                                                                    zip(self.shape, scheme[self._training_level][i][player]))))
 
     def reset(self):
         # reset environment to original state
@@ -63,7 +65,9 @@ class FieldEnv(gym.Env):
         self.ball = Ball(self, self._initial_ball_position)
 
         # place players depending on their number
-        self.__init_agents__()
+       for i, team in enumerate(self.teams):
+            for player in range(int(self.n_agents/self.n_teams)):
+                player.reset_position()
 
         self._add_to_field()
         return self.output()
@@ -246,7 +250,7 @@ class FieldEnv(gym.Env):
 
 class OlympiaRGB(FieldEnv):
     def __init__(self, **kwargs):
-        super(OlympiaRGB, self).__init__(**kwargs)
+        super(OlympiaRGB, self).__init__(agent_type='RGB', **kwargs)
         
 
     def output(self):
@@ -254,8 +258,8 @@ class OlympiaRGB(FieldEnv):
 
 
 class OlympiaRAM(FieldEnv):
-    def __init__(self, **kwargs), :
-        super(OlympiaRAM, self).__init__(**kwargs)
+    def __init__(self, **kwargs):
+        super(OlympiaRAM, self).__init__(agent_type='RAM', **kwargs)
 
     def output(self):
         return [self.ball.position.copy()] + self.player_positions()
