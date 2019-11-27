@@ -160,38 +160,35 @@ class FieldEnv(gym.Env):
         goal_beside_x = self._same_pixel(self.field[inter_pos[0], self.ball.position[1]], self.GOAL)
         hit_post = goal_beside_x and self._same_pixel(self.field[inter_pos[0], inter_pos[1]], self.GOAL)
         goal_far_x = self._same_pixel(self.field[new_pos[0], self.ball.position[1]], self.GOAL)
-        try:
-          if wall_beside_x and wall_beside_y:
-              move = array([-mv for mv in move])
-              self.ball.movement = [array(-mv[0], mv[1]) for mv in self.ball.movement]
-              self.ball.movement = [array(mv[0], -mv[1]) for mv in self.ball.movement]
-          elif wall_beside_x and wall_far_y:
-              move = array([-move[0], 0])
-              self.ball.movement = [array(-mv[0], mv[1]) for mv in self.ball.movement]
-              self.ball.movement = [array(mv[0], -mv[1]) for mv in self.ball.movement]
-          elif wall_far_x and wall_beside_y:
-              move = array([0, -move[1]])
-              self.ball.movement = [array(-mv[0], mv[1]) for mv in self.ball.movement]
-              self.ball.movement = [array(mv[0], -mv[1]) for mv in self.ball.movement]
-          elif (wall_far_x and wall_far_y) or hit_post:
-              move = array([0, 0])
-              self.ball.movement = [array(-mv[0], mv[1]) for mv in self.ball.movement]
-              self.ball.movement = [array(mv[0], -mv[1]) for mv in self.ball.movement]
-          elif wall_beside_x:
-              move = array([-move[0], move[1]])
-              self.ball.movement = [array(-mv[0], mv[1]) for mv in self.ball.movement]
-          elif wall_beside_y:
-              move = array([move[0], -move[1]])
-              self.ball.movement = [array(mv[0], -mv[1]) for mv in self.ball.movement]
-          elif wall_far_x or goal_far_x:
-              move = array([0, move[1]])
-              self.ball.movement = [array(-mv[0], mv[1]) for mv in self.ball.movement]
-          elif wall_far_y:
-              move = array([move[0], 0])
-              self.ball.movement = [array(mv[0], -mv[1]) for mv in self.ball.movement]
-        except:
-          print(self.ball.movement)
-          self.render()
+
+        if wall_beside_x and wall_beside_y:
+            move = array([-mv for mv in move])
+            self.ball.movement = [array([-mv[0], mv[1]]) for mv in self.ball.movement]
+            self.ball.movement = [array([mv[0], -mv[1]]) for mv in self.ball.movement]
+        elif wall_beside_x and wall_far_y:
+            move = array([-move[0], 0])
+            self.ball.movement = [array([-mv[0], mv[1]]) for mv in self.ball.movement]
+            self.ball.movement = [array([mv[0], -mv[1]]) for mv in self.ball.movement]
+        elif wall_far_x and wall_beside_y:
+            move = array([0, -move[1]])
+            self.ball.movement = [array([-mv[0], mv[1]]) for mv in self.ball.movement]
+            self.ball.movement = [array([mv[0], -mv[1]]) for mv in self.ball.movement]
+        elif (wall_far_x and wall_far_y) or hit_post:
+            move = array([0, 0])
+            self.ball.movement = [array([-mv[0], mv[1]]) for mv in self.ball.movement]
+            self.ball.movement = [array([mv[0], -mv[1]]) for mv in self.ball.movement]
+        elif wall_beside_x:
+            move = array([-move[0], move[1]])
+            self.ball.movement = [array([-mv[0], mv[1]]) for mv in self.ball.movement]
+        elif wall_beside_y:
+            move = array([move[0], -move[1]])
+            self.ball.movement = [array([mv[0], -mv[1]]) for mv in self.ball.movement]
+        elif wall_far_x or goal_far_x:
+            move = array([0, move[1]])
+            self.ball.movement = [array([-mv[0], mv[1]]) for mv in self.ball.movement]
+        elif wall_far_y:
+            move = array([move[0], 0])
+            self.ball.movement = [array([mv[0], -mv[1]]) for mv in self.ball.movement]
 
         new_pos = self.ball.position + move
         inter_pos = self.ball.position + array(move // 2, dtype=move.dtype)
