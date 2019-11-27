@@ -21,7 +21,7 @@ In the field state:
 
 
 class FieldEnv(gym.Env):
-    def __init__(self, agent_type, shape=(21, 15), training_level='one player'):
+    def __init__(self, agent_type='RAM', shape=(21, 15), training_level='one player'):
         self.agent_type = agent_type
         self.shape = shape
         self._training_level = training_level
@@ -31,6 +31,10 @@ class FieldEnv(gym.Env):
             n_agents += len(team)
         self.n_agents = n_agents
         self.n_agents_team = self.n_agents // self.n_teams
+        if agent_type == 'RGB':
+            self.state_size = (*self.shape, 3)
+        else:
+            self.state_size = (self.n_agents * 2 + 2,)
         self.__init_static_field__()
         self._initial_ball_position = (int(shape[0]/2), int(shape[1]/2))
         self.__init_agents__()
@@ -76,6 +80,9 @@ class FieldEnv(gym.Env):
 
     def output(self):
         raise NotImplementedError('output() not implemented in child class!')
+
+    def get_agents(self):
+        return [player for team in self.teams for player in team ]
 
     def _player_at(self, pos):
         return bool((self.field[pos[0], pos[1]] == array([255, 0, 0])).all() or
@@ -243,7 +250,7 @@ class FieldEnv(gym.Env):
         stdscr = curses.initscr()
         curses.noecho()
         curses.cbreak()
-        for field, _, done, _ in episode:
+        for field, done in episode:
             self.render(field=field, scr=stdscr, final=done)
         curses.echo()
         curses.nocbreak()
@@ -253,7 +260,6 @@ class FieldEnv(gym.Env):
 class OlympiaRGB(FieldEnv):
     def __init__(self, **kwargs):
         super(OlympiaRGB, self).__init__(agent_type='RGB', **kwargs)
-        self.state_size = (*self.shape, 3)
 
     def output(self):
         return self.field.copy()
@@ -262,7 +268,6 @@ class OlympiaRGB(FieldEnv):
 class OlympiaRAM(FieldEnv):
     def __init__(self, **kwargs):
         super(OlympiaRAM, self).__init__(agent_type='RAM', **kwargs)
-        self.state_size = tuple(self.n_agents * 2 + 2)
 
     def output(self):
         return [self.ball.position.copy()] + self.get_player_positions()

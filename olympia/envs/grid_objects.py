@@ -1,6 +1,5 @@
 import random
 import gym
-from olympia.envs import OlympiaRGB, OlympiaRAM
 import numpy as np
 from numpy import array
 from collections import deque
@@ -81,7 +80,8 @@ class Agent(GridObject):
         # Neural Net for Deep-Q learning Model
         model = Sequential()
         if self.agent_type == 'RAM':
-            model.add(Dense(24, input_dim=self.state_size, activation='relu'))
+            print(self.state_size)
+            model.add(Dense(24, input_shape=self.state_size, activation='relu'))
             model.add(Dense(24, activation='relu'))
             model.add(Dense(self.action_size, activation='linear'))
         elif self.agent_type == 'RGB':
