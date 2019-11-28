@@ -21,12 +21,12 @@ In the field state:
 
 
 class FieldEnv(gym.Env):
-    FIELD = array([0,0,0])
+    FIELD = array([0, 0, 0])
     TEAM1 = array([255, 0, 0])
-    TEAM2 = array([0,255,0])
-    BALL = array([0,0,255])
-    WALL = array([255,255,255])
-    GOAL = array([250,250,250])
+    TEAM2 = array([0, 255, 0])
+    BALL = array([0, 0, 255])
+    WALL = array([255, 255, 255])
+    GOAL = array([250, 250, 250])
 
     def __init__(self, agent_type='RAM', shape=(21, 15), training_level='one_player'):
         self.agent_type = agent_type
@@ -85,17 +85,18 @@ class FieldEnv(gym.Env):
         self._add_to_field()
         return self.output()
 
-    def train(self, episodes, batch_size, render=False, load_saved=False, model='', level=''):
+    def train(self, episodes, batch_size=10, max_timesteps=1000, render=False, load_saved=False):
         agents = self.get_agents()
         if load_saved:
             for agent in agents:
-                agent.load(agent.file_name)
-        batch_size = 32
+                agent.load(self.agent_type, self._training_level)
         start_time = time.time()
         for e in range(episodes):
             done = False
             state = self.reset()
+            t = 0
             while not done:
+                t += 1
                 if render:
                     self.render()
                 actions = [agent.choose_action(state) for agent in agents]
@@ -104,18 +105,20 @@ class FieldEnv(gym.Env):
                     agent.remember(state, action, reward, next_state, done)
                     if len(agent.memory) > batch_size and not done:
                         agent.replay(batch_size)
+                if t == max_timesteps:
+                    done = True
                 if done:
-                    print("Episode {}/{} complete. Training time: {}"
-                        .format(e, episodes, time.time() - start_time))
+                    print("Episode {}/{} complete. Training time: {}".format(e, episodes,
+                                                                             time.time() - start_time))
                 state = next_state
-            if e % 10 == 0:     
+            if e % 100 == 0:
                 for agent in agents:
-                    agent.save(e, model, level)
+                    agent.save(e, self.agent_type, self._training_level)
 
     def run(self, episodes=3, render=True):
         agents = self.get_agents()        
         start_time = time.time()
-        for e in range(episodes):bat
+        for e in range(episodes):
             done = False
             state = self.reset()
             while not done:
@@ -142,80 +145,56 @@ class FieldEnv(gym.Env):
         y = self._same_pixel(self.field[self.ball.position[0], position[1]], self.WALL)
         return x, y
 
+    def _same_position(self, pos1, pos2):
+        return self._same_pixel(pos1, pos2)
+
     @staticmethod
     def _same_pixel(pixel1, pixel2):
         return bool((pixel1 == pixel2).all())
 
-    def _same_position(self, pos1, pos2):
-        return self._same_pixel(pos1, pos2)
-
-    def check_walls(self, move):
+    def check_walls(self, move):  # ball just stops at walls
         new_pos = self.ball.position + move
-        inter_pos = self.ball.position + array(move // 2, dtype=move.dtype)
+        inter_pos = self.ball.position + move // 2
+        wall_close = self._same_pixel(self.field[inter_pos[0], inter_pos[1]], self.WALL)
+        goal_close = self._same_pixel(self.field[inter_pos[0], inter_pos[1]], self.GOAL)
+        wall_far = self._same_pixel(self.field[new_pos[0], new_pos[1]], self.WALL) if not (wall_close or goal_close) else True
 
-        wall_beside_x, wall_beside_y = self._wall_beside(inter_pos)
-        new_pos[0] = inter_pos[0] if wall_beside_x else new_pos[0]
-        new_pos[1] = inter_pos[1] if wall_beside_y else new_pos[1]
-        wall_far_x, wall_far_y = self._wall_beside(new_pos)
-        goal_beside_x = self._same_pixel(self.field[inter_pos[0], self.ball.position[1]], self.GOAL)
-        hit_post = goal_beside_x and self._same_pixel(self.field[inter_pos[0], inter_pos[1]], self.GOAL)
-        goal_far_x = self._same_pixel(self.field[new_pos[0], self.ball.position[1]], self.GOAL)
+        if wall_close:
+            new_pos = self.ball.position.copy()
+            self.ball.movement = []
+        if goal_close or wall_far:
+            new_pos = inter_pos.copy()
+            self.ball.movement = []
 
-        if wall_beside_x and wall_beside_y:
-            move = array([-mv for mv in move])
-            self.ball.movement = [array([-mv[0], mv[1]]) for mv in self.ball.movement]
-            self.ball.movement = [array([mv[0], -mv[1]]) for mv in self.ball.movement]
-        elif wall_beside_x and wall_far_y:
-            move = array([-move[0], 0])
-            self.ball.movement = [array([-mv[0], mv[1]]) for mv in self.ball.movement]
-            self.ball.movement = [array([mv[0], -mv[1]]) for mv in self.ball.movement]
-        elif wall_far_x and wall_beside_y:
-            move = array([0, -move[1]])
-            self.ball.movement = [array([-mv[0], mv[1]]) for mv in self.ball.movement]
-            self.ball.movement = [array([mv[0], -mv[1]]) for mv in self.ball.movement]
-        elif (wall_far_x and wall_far_y) or hit_post:
-            move = array([0, 0])
-            self.ball.movement = [array([-mv[0], mv[1]]) for mv in self.ball.movement]
-            self.ball.movement = [array([mv[0], -mv[1]]) for mv in self.ball.movement]
-        elif wall_beside_x:
-            move = array([-move[0], move[1]])
-            self.ball.movement = [array([-mv[0], mv[1]]) for mv in self.ball.movement]
-        elif wall_beside_y:
-            move = array([move[0], -move[1]])
-            self.ball.movement = [array([mv[0], -mv[1]]) for mv in self.ball.movement]
-        elif wall_far_x or goal_far_x:
-            move = array([0, move[1]])
-            self.ball.movement = [array([-mv[0], mv[1]]) for mv in self.ball.movement]
-        elif wall_far_y:
-            move = array([move[0], 0])
-            self.ball.movement = [array([mv[0], -mv[1]]) for mv in self.ball.movement]
+        return inter_pos, new_pos
 
-        new_pos = self.ball.position + move
-        inter_pos = self.ball.position + array(move // 2, dtype=move.dtype)
-        return move, inter_pos, new_pos
+    def _interception(self, pos):
+        for i, team in enumerate(self.teams):
+            for j, player in enumerate(team):
+                if self._same_position(player.position, pos):
+                    player.has_ball = True
+                    player.move_counter = 3
+                    self.ball.moving = False
+                    self.ball.position = player.position.copy()
 
     def move_ball(self):
         move = self.ball.movement.pop()
-        move, inter_pos, new_pos = self.check_walls(move)
+        inter_pos, new_pos = self.check_walls(move)
 
         # check if ball has stopped
         if len(self.ball.movement) == 0:
             self.ball.moving = False
 
         # check if player is in the way
-        if self._player_at(inter_pos) or self._player_at(new_pos):
-            for i, team in enumerate(self.teams):
-                for j, player in enumerate(team):
-                    if self._same_position(player.position, new_pos) or self._same_position(player.position, inter_pos):
-                        player.has_ball = True
-                        player.move_counter = 3
-                        self.ball.moving = False
+        if self._player_at(inter_pos):
+            self._interception(inter_pos)
+        elif self._player_at(new_pos):
+            self._interception(new_pos)
         else:  # make ball move
-            # check ball hasn't left grid
-            if new_pos[0] == -1 or new_pos[0] == self.shape[0]:
-                self.ball.position = inter_pos.copy()
-            else:
-                self.ball.position = new_pos.copy()
+            # double check ball is in right spot
+            new_pos[0] = 0 if new_pos[0] < 0 else new_pos[0]
+            new_pos[0] = self.shape[0]-1 if new_pos[0] >= self.shape[0] else new_pos[0]
+            self.ball.position = new_pos.copy()
 
     def step(self, *actions):
         winning_team = None
@@ -244,33 +223,37 @@ class FieldEnv(gym.Env):
             rewards = []
             for team in self.teams:
                 if team == winning_team:
-                    for _ in range(int(self.n_agents / self.n_teams)):
+                    for _ in range(self.n_agents_team):
                         rewards.append(100)
                 else:
-                    for _ in range(int(self.n_agents / self.n_teams)):
+                    for _ in range(self.n_agents_team):
                         rewards.append(-100)
         self._add_to_field()
         return self.output(), rewards, done, None
+
+    def _check_overlapping_players(self, player):
+        if (self.field[player.position[0], player.position[1], :] == 255).any():  # player occupying same pos.
+            other_player = None
+            for j, position in enumerate(self.get_player_positions()):
+                if self._same_position(position, player.position):
+                    other_player = self.teams[j // self.n_agents_team][j % self.n_agents_team]
+            moved_player = random.choice((player, other_player))  # choose one of them to move
+            moved_player.position = moved_player.prev_position.copy()
+            self.field[moved_player.position[0], moved_player.position[1], moved_player.team] = 255
+            self.field[player.position[0], player.position[1], moved_player.team] = 0
+            if moved_player.has_ball:
+                moved_player.has_ball = False
+                moved_player.move_counter = -1
 
     def _add_to_field(self):
         self.field = self._static_field.copy()
         for i,team in enumerate(self.teams):
             for player in team:
-                if (self.field[player.position[0], player.position[1], :] == 255).any():  # player occupying same pos.
-                    other_player = None
-                    for j,position in enumerate(self.get_player_positions()):
-                        if self._same_position(position, player.position):
-                            other_player = self.teams[j // self.n_agents_team][j % self.n_agents_team]
-                    moved_player = random.choice((player, other_player))
-                    moved_player.position = moved_player.prev_position.copy()
-                    self.field[moved_player.position[0], moved_player.position[1], moved_player.team] = 255
-                    self.field[player.position[0], player.position[1], moved_player.team] = 0
-                    if moved_player.has_ball:
-                        moved_player.has_ball = False
-                        moved_player.move_counter = -1
+                self._check_overlapping_players(player)
                 self.field[player.position[0], player.position[1], i] = 255  # teams are red and green
-        if self._same_pixel(self.field[self.ball.position[0], self.ball.position[1]], self.FIELD):
-            self.field[self.ball.position[0], self.ball.position[1], 2] = 255  # ball is blue
+        if self._same_pixel(self.field[self.ball.position[0], self.ball.position[1]], self.FIELD)\
+                or self._same_pixel(self.field[self.ball.position[0], self.ball.position[1]], self.GOAL):
+            self.field[self.ball.position[0], self.ball.position[1], :] = self.BALL
 
     def get_player_positions(self):
         agents = []
