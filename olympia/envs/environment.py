@@ -112,7 +112,7 @@ class FieldEnv(gym.Env):
                 if done:
                     time_done.append(t)
                     rewards_done.append(rewards[0])
-                    print("Episode {}/{} complete. Training steps: {}".format(e, episodes,
+                    print("Episode {}/{} complete. Training steps: {}".format(e+1, episodes,
                                                                              t))
                 state = next_state
             if e % 100 == 0:
