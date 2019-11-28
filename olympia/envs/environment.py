@@ -91,6 +91,8 @@ class FieldEnv(gym.Env):
             for agent in agents:
                 agent.load(self.agent_type, self._training_level)
         start_time = time.time()
+        time_done = []
+        rewards_done = []
         for e in range(episodes):
             done = False
             state = self.reset()
@@ -108,12 +110,16 @@ class FieldEnv(gym.Env):
                 if t == max_timesteps:
                     done = True
                 if done:
-                    print("Episode {}/{} complete. Training time: {}".format(e, episodes,
-                                                                             time.time() - start_time))
+                    time_done.append(t)
+                    rewards_done.append(rewards[0])
+                    print("Episode {}/{} complete. Training steps: {}".format(e, episodes,
+                                                                             t))
                 state = next_state
             if e % 100 == 0:
                 for agent in agents:
                     agent.save(e, self.agent_type, self._training_level)
+        print("Total training time: {}".format(time.time() - start_time))
+        return (time_done, rewards_done)
 
     def run(self, episodes=3, render=True):
         agents = self.get_agents()        
