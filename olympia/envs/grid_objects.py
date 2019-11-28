@@ -1,4 +1,5 @@
 import random
+import sys
 import gym
 import numpy as np
 from numpy import array
@@ -71,9 +72,9 @@ class Agent(GridObject):
         self.state_size = env.state_size
         self.action_size = len(self.actions)
         self.memory = deque(maxlen=2000)
-        self.gamma = 0.95    # discount rate
+        self.gamma = 1.0    # discount rate
         self.epsilon = 1.0  # exploration rate
-        self.epsilon_min = 0.01
+        self.epsilon_min = 0.005
         self.epsilon_decay = 0.995
         self.learning_rate = 0.001
         self.model = self._build_model()
@@ -94,8 +95,7 @@ class Agent(GridObject):
         else:
             raise ValueError('Invalid agent type supplied!')
 
-        model.compile(loss='mse',
-                      optimizer=Adam(lr=self.learning_rate))
+        model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
         return model
     
     def reset_position(self, randomize=True):
@@ -113,7 +113,8 @@ class Agent(GridObject):
         return np.argmax(action_q[0])  
 
     def act(self, ndx):
-        self.prev_position = self.position.copy()
+        moving_tiles = 1 <= ndx <= 8
+        self.prev_position = self.position.copy() if moving_tiles else self.prev_position
         if ndx <= 8:  # movement action
             movement = list(self.actions.values())[ndx]
             new_pos = self.position + movement
@@ -153,9 +154,9 @@ class Agent(GridObject):
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
-    def load(self, name):
-        self.model.load_weights(self.file_name)
+    def load(self, episode, model, level):
+        self.model.load_weights(model+'_'+level+'_'+self.file_name+'_ep'+str(episode+1)+'.h5')
 
     def save(self, episode, model, level):
-        self.model.save_weights(self.file_name+'ep'+str(episode)+model+level+'.h5')
+        self.model.save_weights(model+'_'+level+'_'+self.file_name+'_ep'+str(episode+1)+'.h5')
 
