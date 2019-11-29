@@ -1,3 +1,15 @@
+"""Written by Matthew Filipovich and Hugh Morrison
+FieldEnv simulates a sport field to test perforamnce of RL algorithms. 
+
+In the field state:
+- BLUE (0,0,1) represents the ball
+- BLACK (0,0,0) represents empty space
+- RED (1,0,0) represents players on team 1
+- GREEN (0,1,0) represents players on team 2
+- GREY (.9,.9,.9) represents a goal
+- WHITE (1,1,1) represents a wall
+"""
+
 import sys
 from contextlib import closing
 import numpy as np
@@ -8,16 +20,6 @@ import random
 import gym
 import curses
 import time
-
-"""
-In the field state:
-- BLUE (0,0,1) represents the ball
-- BLACK (0,0,0) represents empty space
-- RED (1,0,0) represents players on team 1
-- GREEN (0,1,0) represents players on team 2
-- GREY (.9,.9,.9) represents a goal
-- WHITE (1,1,1) represents a wall
-"""
 
 
 class FieldEnv(gym.Env):
@@ -57,7 +59,7 @@ class FieldEnv(gym.Env):
         top = int(self.shape[1] / 4 + self.shape[1] / 2)
         self.field[0, bot:top, :] = 250  # left goal
         self.field[self.shape[0] - 1, bot:top, :] = 250  # right goal
-        self._static_field = self.field.copy()  # never add objects to this field (for replacing values after agent/ball moves over position)
+        self._static_field = self.field.copy()  # never add objects to this field
 
     def __init_agents__(self):
         self.teams = [[] for _ in range(self.n_teams)]
@@ -71,21 +73,17 @@ class FieldEnv(gym.Env):
                                   initial_position=init_pos))
 
     def reset(self):
-        # reset environment to original state
+        """Reset environment to original state."""
         self.field = self._static_field.copy()
-
-        # put ball in center of field
         self.ball.reset_position()
-
-        # place players depending on their number
         for team in self.teams:
             for player in team:
                 player.reset_position()
-
         self._add_to_field()
         return self.output()
 
     def train(self, episodes, batch_size=10, max_timesteps=1000, render=False, load_saved=False):
+        """Trains agents in the environment."""
         agents = self.get_agents()
         if load_saved:
             for agent in agents:
@@ -122,6 +120,7 @@ class FieldEnv(gym.Env):
         return (time_done, rewards_done)
 
     def run(self, episodes=3, render=True):
+        """Runs environment with trained agents."""
         agents = self.get_agents()        
         start_time = time.time()
         for e in range(episodes):
@@ -158,7 +157,7 @@ class FieldEnv(gym.Env):
     def _same_pixel(pixel1, pixel2):
         return bool((pixel1 == pixel2).all())
 
-    def check_walls(self, move):  # ball just stops at walls
+    def check_walls(self, move): 
         new_pos = self.ball.position + move
         inter_pos = self.ball.position + move // 2
         wall_close = self._same_pixel(self.field[inter_pos[0], inter_pos[1]], self.WALL)
@@ -175,8 +174,8 @@ class FieldEnv(gym.Env):
         return inter_pos, new_pos
 
     def _interception(self, pos):
-        for i, team in enumerate(self.teams):
-            for j, player in enumerate(team):
+        for team in self.teams:
+            for player in team:
                 if self._same_position(player.position, pos):
                     player.has_ball = True
                     player.move_counter = 3
@@ -186,11 +185,9 @@ class FieldEnv(gym.Env):
     def move_ball(self):
         move = self.ball.movement.pop()
         inter_pos, new_pos = self.check_walls(move)
-
         # check if ball has stopped
         if len(self.ball.movement) == 0:
             self.ball.moving = False
-
         # check if player is in the way
         if self._player_at(inter_pos):
             self._interception(inter_pos)
@@ -205,17 +202,14 @@ class FieldEnv(gym.Env):
     def step(self, *actions):
         winning_team = None
         done = False
-
         # move players
         for i, team in enumerate(self.teams):
             for j, player in enumerate(team):
                 player_ndx = int(i * len(team) + j)
                 player.act(actions[player_ndx])
-
         # move ball
         if self.ball.moving:
             self.move_ball()
-
         # check for ball in net
         if self._same_pixel(self._static_field[self.ball.position[0], self.ball.position[1]], self.GOAL):
             done = True

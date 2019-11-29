@@ -1,3 +1,8 @@
+"""Written by Matthew Filipovich and Hugh Morrison
+Ball class simulates the ball in the FieldEnv.
+Agent class can be trained thorugh RL to perform well in FieldEnv.
+"""
+
 import random
 import sys
 import gym
@@ -44,10 +49,10 @@ class Ball(GridObject):
 class Agent(GridObject):
     def __init__(self, env, agent_type, team, number, initial_position):
         super().__init__(env, initial_position)
-        "Environment Values"
+        #Environment Values
         self.agent_type = agent_type
         self.team = team
-        self.number = number  # player's number on its team
+        self.number = number 
         self.reset_position()
         self.file_name = 'agent' + str(self.number) + 'team' + str(self.team)
         self.actions = {'STAY': array([0, 0]),
@@ -68,19 +73,19 @@ class Agent(GridObject):
                         'THROW_DOWN': array([0, 0]),
                         'THROW_DOWNRIGHT': array([0, 0])
                         }
-        "ANN values"
+        #ANN values
         self.state_size = env.state_size
         self.action_size = len(self.actions)
         self.memory = deque(maxlen=2000)
-        self.gamma = 1.0    # discount rate
-        self.epsilon = 1.0  # exploration rate
+        self.gamma = 1.0    
+        self.epsilon = 1.0  
         self.epsilon_min = 0.005
         self.epsilon_decay = 0.995
         self.learning_rate = 0.001
         self.model = self._build_model()
 
     def _build_model(self):
-        # Neural Net for Deep-Q learning Model
+        """Neural Net for Deep-Q learning Model."""
         model = Sequential()
         if self.agent_type == 'RAM':
             model.add(Dense(24, input_shape=self.state_size, activation='relu'))
@@ -94,7 +99,6 @@ class Agent(GridObject):
             model.add(Dense(self.action_size, activation='linear'))
         else:
             raise ValueError('Invalid agent type supplied!')
-
         model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
         return model
     
@@ -119,7 +123,7 @@ class Agent(GridObject):
             movement = list(self.actions.values())[ndx]
             new_pos = self.position + movement
             space = self.env.field[new_pos[0], new_pos[1]]
-            if not (space >= 250).any():  # greater than 250 means wall, net, players or ball
+            if not (space >= 250).any():  # greater than 250 is wall, net, players or ball
                 if self.has_ball:
                     if self.move_counter > 0:
                         self.move_counter -= 1
@@ -159,4 +163,3 @@ class Agent(GridObject):
 
     def save(self, episode, model, level):
         self.model.save_weights(model+'_'+level+'_'+self.file_name+'_ep'+str(episode+1)+'.h5')
-
