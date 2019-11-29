@@ -1,14 +1,7 @@
 
 """
-
-This file could have different parameters for training schemes hardcoded
-
-- one player
-- one v one
-- two v two
-- three v three
-- etc...
-
+Written by Matthew Filipovich and Hugh Morison
+This file just contains a dictionary of initial positions for various points int the training scheme
 """
 
 scheme = {

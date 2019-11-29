@@ -20,8 +20,10 @@ class TestStringMethods(unittest.TestCase):
         env.render()
 
     def test_randomized_pos(self):
-        env = OlympiaRAM(shape=(15,9), training_level='one_v_one')
-        env.train(episodes=11, batch_size=5, render=False, load_saved=False)
+        env = OlympiaRAM(shape=(15,9), training_level='two_v_two')
+        for _ in range(5):
+            env.reset()
+            env.render()
 
 
 if __name__ == '__main__':

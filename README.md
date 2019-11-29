@@ -1,7 +1,17 @@
 # olympia
-Reinforcement Learning Project
+CISC 856 Reinforcement Learning Project
+Hugh Morison (10179903)
+Matthew Filipovich (20029031)
 
-Olympia is a simple environment, implemented in the style of Open AI's gym environments, that is meant to replicate a soccer field with multiple agents.
+All the code is structured as a python package called 'olympia'.
+A sample training run (over 5 episodes) can be performed by running main.py.
+Running play_trained_agents.py will render an episode using the best performing agents.
+All the trained models are *.h5 files contained in agent_models/.
 
-The goal of this project is to observe the emergent behaviour and strategy of a multi-agent system.
+The code for this project was written using Python 3.6.x in both MacOS and Windows 10.
 
+Required python packages:
+* gym
+* keras
+* tensorflow
+* numpy

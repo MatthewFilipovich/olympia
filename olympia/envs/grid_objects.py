@@ -1,11 +1,10 @@
-"""Written by Matthew Filipovich and Hugh Morrison
+"""
+Written by Matthew Filipovich and Hugh Morison
 Ball class simulates the ball in the FieldEnv.
-Agent class can be trained thorugh RL to perform well in FieldEnv.
+Agent class simulates the behaviour of a learning agent that can be trained through RL in FieldEnv.
 """
 
 import random
-import sys
-import gym
 import numpy as np
 from numpy import array
 from collections import deque

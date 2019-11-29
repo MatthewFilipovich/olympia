@@ -1,4 +1,5 @@
-"""Written by Matthew Filipovich and Hugh Morrison
+"""
+Written by Matthew Filipovich and Hugh Morison
 FieldEnv simulates a sport field to test perforamnce of RL algorithms. 
 
 In the field state:
@@ -82,7 +83,7 @@ class FieldEnv(gym.Env):
         self._add_to_field()
         return self.output()
 
-    def train(self, episodes, batch_size=10, max_timesteps=1000, render=False, load_saved=False):
+    def train(self, episodes, batch_size=10, max_timesteps=1000, render=False, load_saved=False, save_models=False):
         """Trains agents in the environment."""
         agents = self.get_agents()
         if load_saved:
@@ -110,10 +111,9 @@ class FieldEnv(gym.Env):
                 if done:
                     time_done.append(t)
                     rewards_done.append(rewards[0])
-                    print("Episode {}/{} complete. Training steps: {}".format(e+1, episodes,
-                                                                             t))
+                    print("Episode {}/{} complete. Training steps: {}".format(e+1, episodes, t))
                 state = next_state
-            if e % 100 == 0:
+            if e % 100 == 0 and save_models:
                 for agent in agents:
                     agent.save(e, self.agent_type, self._training_level)
         print("Total training time: {}".format(time.time() - start_time))
